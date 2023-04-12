@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import json
 
 class Vision:
     def __init__(self, cameraSource=0):
@@ -19,10 +18,3 @@ class Vision:
     def getFrame(self):
         self.__updateFrame()
         return self.frame
-        
-    def readJson(self, color, value, minMax):
-        # Load the JSON data
-        with open('colors.json', 'r') as file:
-            # Load the JSON data
-            data = json.load(file)
-            return data[color][value][minMax]
