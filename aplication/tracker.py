@@ -23,7 +23,12 @@ class Tracker:
         return True
 
     def detect(self, mask):
-        pass
+        self.targetList, hierarquias = cv2.findContours(mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        for contorno in self.targetList:
+            x,y,w,h = cv2.boundingRect(contorno)
+            print(x,y)
+            # cv2.rectangle(img, (x,y), (x+w,y+h), (0,255,0), 2)
+            # cv2.putText(img, 'X: %d  y: %d' % (x, y), (x,y+h+14), cv.FONT_HERSHEY_PLAIN, 1, (0,0,0), 1)
     
-    def ajdust():
+    def adjust(self):
         pass
