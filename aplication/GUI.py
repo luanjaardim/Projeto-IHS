@@ -1,9 +1,9 @@
 from vision import *
+from tracker import *
 import tkinter as tk
 import numpy as np
 import cv2
 from PIL import Image, ImageTk
-import json
 
 class ColorSettings:
     def __init__(self, frame):
@@ -31,10 +31,12 @@ class ColorSettings:
         return lowerValues, upperValues
 
 class GUI:
-    def __init__(self, root, camera):
+    def __init__(self, root):
+
+        self.tracker = Tracker()
 
         #setup camera
-        self.camera = camera
+        self.camera = Vision()
 
         #create window
         self.window = root
@@ -61,7 +63,7 @@ class GUI:
     
     def update(self):
         #gets current frame from camera object
-        frame = camera.getFrame()
+        frame = self.camera.getFrame()
         
         #preview canvas
 
@@ -79,7 +81,11 @@ class GUI:
 
         #get hsv frame
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        #uptade threshold values
         lower_range, upper_range = self.inputField.getValues()
+        #uptade threshold values on tracker
+        self.tracker.update_HSV_thresh(lower_range, upper_range)
+        #create a mask
         mask = cv2.inRange(hsv, lower_range, upper_range)
         # Convert to PIL Image
         img = Image.fromarray(mask) 
@@ -89,12 +95,9 @@ class GUI:
         self.maskCanvas.create_image(0, 0, anchor=tk.NW, image=img) 
         self.maskCanvas.img = img
 
+        #detect object position
+        self.tracker.detect(mask)
+
+        #call itself again after 15ms
         self.window.after(15, self.update)
 
-
-camera = Vision()
-root = tk.Tk()
-
-app = GUI(root, camera)
-
-root.mainloop()
