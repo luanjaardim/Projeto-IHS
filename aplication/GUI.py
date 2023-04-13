@@ -48,12 +48,12 @@ class GUI:
         self.lowerRow.pack()
         
         # Create the canvas for img preview
-        self.canvas = tk.Canvas(self.upperRow)
+        self.canvas = tk.Canvas(self.upperRow, width=400, height=300)
         self.canvas.grid(row=0,column=0)
+        self.maskCanvas = tk.Canvas(self.lowerRow, width=400, height=300)
+        self.maskCanvas.grid(row=0,column=0)
         
         #image settings stuff
-        self.maskCanvas = tk.Canvas(self.lowerRow)
-        self.maskCanvas.grid(row=0,column=0)
         self.settingsFrame = tk.LabelFrame(self.lowerRow, text='Configuração de Cores')
         self.settingsFrame.grid(row=0, column=1)
         self.inputField = ColorSettings(self.settingsFrame)
@@ -65,7 +65,17 @@ class GUI:
         #gets current frame from camera object
         frame = self.camera.getFrame()
         
-        #preview canvas
+        #get hsv frame
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        #uptade threshold values
+        lower_range, upper_range = self.inputField.getValues()
+        #uptade threshold values on tracker
+        self.tracker.update_HSV_thresh(lower_range, upper_range)
+        #create a mask
+        mask = cv2.inRange(hsv, lower_range, upper_range)
+
+        #detect object position
+        frame = self.tracker.detect(mask, frame)
 
         # Convert BGR to RGB
         img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) 
@@ -76,17 +86,7 @@ class GUI:
         # Draw the image on the canvas
         self.canvas.create_image(0, 0, anchor=tk.NW, image=img) 
         self.canvas.img = img
-
-        #mask canvas
-
-        #get hsv frame
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        #uptade threshold values
-        lower_range, upper_range = self.inputField.getValues()
-        #uptade threshold values on tracker
-        self.tracker.update_HSV_thresh(lower_range, upper_range)
-        #create a mask
-        mask = cv2.inRange(hsv, lower_range, upper_range)
+        
         # Convert to PIL Image
         img = Image.fromarray(mask) 
         # Convert to PhotoImage
@@ -94,9 +94,6 @@ class GUI:
         # Draw the image on the canvas
         self.maskCanvas.create_image(0, 0, anchor=tk.NW, image=img) 
         self.maskCanvas.img = img
-
-        #detect object position
-        self.tracker.detect(mask)
 
         #call itself again after 15ms
         self.window.after(15, self.update)

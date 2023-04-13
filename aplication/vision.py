@@ -10,10 +10,10 @@ class Vision:
         self.__updateFrame()
 
     def __updateFrame(self): #essa funcao atualiza o frame, vai ser usada quando chegar na observationPose do robo
-        ret, frame = self.cam.read()
+        ret, self.frame = self.cam.read()
         while ret == False:
-            ret, frame = self.cam.read()
-        self.frame = cv2.resize(frame, (453, 340))
+            ret, self.frame = self.cam.read()
+        self.frame = cv2.resize(self.frame, (400, 300))
 
     def getFrame(self):
         self.__updateFrame()
