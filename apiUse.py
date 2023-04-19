@@ -59,23 +59,16 @@ while True:
     
         # atira
         if torreta.get_SW(0) == 1:
-            # start_time = time.time()
-            # elapsed_time = 0
-            # while elapsed_time < 3:
-            #     time.sleep(0.1)
-            #     elapsed_time = time.time() - start_time
             print('POW')
             ser.write(b's')
         else:
             print('No POW')
-
 
         time.sleep(0.1)
         print('----------------------------')
 
     else:
         print('modo auto!')
-        
 
         # Capture frame-by-frame
         ret, frame = cap.read()
@@ -121,7 +114,24 @@ while True:
                             #inclinar para cima
                             ser.write(b'c')
 
-                        
+        cv2.waitKey(0)
+
+        # liga os motores
+        if torreta.get_SW(1) == 1 and  spinFlag == False:
+            print('motores rodando')
+            spinFlag = True
+            ser.write(b'O')
+        elif spinFlag == True and torreta.get_SW(1) == 0:
+            print('motores parados')
+            spinFlag = False
+            ser.write(b'o')
+    
+        # atira
+        if torreta.get_SW(0) == 1:
+            print('POW')
+            ser.write(b's')
+        else:
+            print('No POW')
 
         # Display the resulting frame
         cv2.imshow('Mascara',result)
