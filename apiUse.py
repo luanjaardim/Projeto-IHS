@@ -13,24 +13,46 @@ ser = serial.Serial('/dev/ttyACM0', 9600)
 cap = cv2.VideoCapture(0)
 
 spinFlag = False
+shootFlag = False
+ligaLeds = 0x3FFFF
+estado = 1
 
-while True:
+def shooting():
+    if torreta.get_SW(0) == 1:
+        contagem = 0x3FFFF
+        display = 5
+        for i in range(36):
+            if(i % 7) == 0:
+                count = '000' + str(display)
+                torreta.put_DP(0, count)
+                print("Tiro em:", display)
+                display -= 1
+            if (i % 2) == 0:
+                time.sleep(278 / 1000)
+                torreta.put_LD(contagem >> i//2)
+        print('POW')
+        torreta.put_DP(0, "0000")
+        ser.write(b's')
+    else:
+        print('No POW')
+
+while torreta.get_SW(16) == 1:
     
     sendChar = 0
 
-    # 0 para manual e 1 para automatic  o
+    # 0 para manual e 1 para automatic
     if torreta.get_SW(17) == 0 :
         print('modo manual!')
-
+        
         # controla o giro da base
         if (torreta.get_PB(1) == 0 and torreta.get_PB(0) == 1):
-            # Gira para direita
-            print('Girando pra direita!')
-            ser.write(b'd')
-        elif (torreta.get_PB(1) == 1 and torreta.get_PB(0) == 0):
             # Gira para esquerda
             print('Girando pra esquerda!')
             ser.write(b'e')
+        elif (torreta.get_PB(1) == 1 and torreta.get_PB(0) == 0):
+            # Gira para direita
+            print('Girando pra direita!')
+            ser.write(b'd')
 
         else:
             print('sem giro')
@@ -58,14 +80,23 @@ while True:
             ser.write(b'o')
     
         # atira
-        if torreta.get_SW(0) == 1:
+        if torreta.get_SW(0) == 1 and shootFlag == False:
             print('POW')
+            shootFlag = True
+            shooting()
             ser.write(b's')
-        else:
+        elif torreta.get_SW(0) == 0:
+            shootFlag = False
             print('No POW')
 
+
+        if spinFlag == True:
+            torreta.put_LD(ligaLeds if  estado == 1 else 0x0)
+            estado = 1 if estado == 0 else 0
+        else:
+            torreta.put_LD(0x0)
+
         time.sleep(0.1)
-        print('----------------------------')
 
     else:
         print('modo auto!')
@@ -77,8 +108,8 @@ while True:
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
         # Define range of blue color in HSV
-        lower_blue = np.array([26,64,113])
-        upper_blue = np.array([61,255,206])
+        lower_blue = np.array([62,158,38])
+        upper_blue = np.array([64,214,255])
 
         # Threshold the HSV image to get only blue colors
         mask = cv2.inRange(hsv, lower_blue, upper_blue)
@@ -87,8 +118,8 @@ while True:
         result = cv2.bitwise_and(frame, frame, mask=mask)
 
         # calculos
-        axes = (100,50)
-        center = (int(frame.shape[1]/2), int(frame.shape[0]/2))
+        axes = (30,30)
+        center = (int(frame.shape[1]/2), int(frame.shape[0]/2)+100)
         cv2.ellipse(frame, center, axes, 0, 0, 360, (0,255,0), 1)
         targetList, hierarquias = cv2.findContours(mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         for contorno in targetList:
@@ -112,9 +143,9 @@ while True:
                             ser.write(b'b')
                         else:
                             #inclinar para cima
-                            ser.write(b'c')
+                            ser.write(b'c')# 
 
-        cv2.waitKey(0)
+        cv2.waitKey(1)
 
         # liga os motores
         if torreta.get_SW(1) == 1 and  spinFlag == False:
@@ -127,11 +158,21 @@ while True:
             ser.write(b'o')
     
         # atira
-        if torreta.get_SW(0) == 1:
+        if torreta.get_SW(0) == 1 and shootFlag == False:
             print('POW')
+            shootFlag = True
+            shooting()
             ser.write(b's')
-        else:
+        elif torreta.get_SW(0) == 0:
+            shootFlag = False
             print('No POW')
+
+
+        if spinFlag == True:
+            torreta.put_LD(ligaLeds if  estado == 1 else 0x0)
+            estado = 1 if estado == 0 else 0
+        else:
+            torreta.put_LD(0x0)
 
         # Display the resulting frame
         cv2.imshow('Mascara',result)
